@@ -15,7 +15,7 @@ SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 
 try:
     # Load credentials from Streamlit Secrets
-    credentials_dict = st.secrets["gcp_service_account"]
+    credentials_dict = json.loads(st.secrets["gcp_service_account"])
 
     # Ensure it's a dictionary (if loaded incorrectly as a string)
     if isinstance(credentials_dict, str):
