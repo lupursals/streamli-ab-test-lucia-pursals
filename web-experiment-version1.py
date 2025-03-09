@@ -4,29 +4,38 @@ import random
 import time
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-
-# -- SETTING UP GOOGLE SHEETS
-
-# Google Sheets Setup
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# Google Sheets Authentication
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDENTIALS = ServiceAccountCredentials.from_json_keyfile_name("streamlit-ab-test-credentials.json", SCOPE)
-CLIENT = gspread.authorize(CREDENTIALS)
+# -- SETTING UP GOOGLE SHEETS
 
-# Open the Google Sheet
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1gLxt5QOmQD8iz2bbcxZDvio6n8Np1JJDgBH_Aa-IVq0/edit#gid=1602658179"
+# Google Sheets Authentication using Streamlit Secrets
+SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 try:
+    # Load credentials from Streamlit Secrets
+    credentials_dict = st.secrets["gcp_service_account"]
+
+    # Ensure it's a dictionary (if loaded incorrectly as a string)
+    if isinstance(credentials_dict, str):
+        credentials_dict = json.loads(credentials_dict)
+
+    # Authenticate with Google Sheets
+    CREDENTIALS = ServiceAccountCredentials.from_json_keyfile_dict(credentials_dict, SCOPE)
+    CLIENT = gspread.authorize(CREDENTIALS)
+
+    # Open the Google Sheet
+    SHEET_URL = "https://docs.google.com/spreadsheets/d/1gLxt5QOmQD8iz2bbcxZDvio6n8Np1JJDgBH_Aa-IVq0/edit#gid=1602658179"
     SPREADSHEET = CLIENT.open_by_url(SHEET_URL)
     WORKSHEET = SPREADSHEET.sheet1  # Select the first worksheet
+
+except KeyError:
+    st.error("Missing `gcp_service_account` credentials in Streamlit secrets!")
+    st.stop()
 except gspread.exceptions.SpreadsheetNotFound:
     st.error("Google Sheet not found! Make sure it exists and is shared with your service account.")
     st.stop()
-
 
 # -- LOAD DATASET 
 def load_data():
@@ -117,5 +126,3 @@ elif page == "Experiment":
     # Show Time Taken
     if st.session_state.time_taken is not None:
         st.write(f"Time taken to answer: **{st.session_state.time_taken:.2f} seconds**")
-
-
